@@ -1,0 +1,17 @@
+node_modules
+dist
+build
+coverage
+.next
+.nuxt
+.vuepress/dist
+.cache
+.output
+.contentlayer
+.idea
+*.log
+.DS_Store
+.env
+.env.local
+.env.*.local
+pnpm-lock.yaml

@@ -1,0 +1,6 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+# 共享依赖配置
+shared-workspace-lockfile: true

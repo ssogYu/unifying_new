@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/changesets@2.26.0/schema.json",
+  "changelog": [
+    "@changesets/changelog-github",
+    {
+      "repo": "your-github-repo"
+    }
+  ],
+  "commit": true,
+  "fixed": [],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

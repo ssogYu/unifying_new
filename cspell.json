@@ -1,0 +1,37 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "monorepo",
+    "pnpm",
+    "tsup",
+    "vitest",
+    "changesets",
+    "precommit",
+    "husky",
+    "commitizen",
+    "changeset",
+    "workspace"
+  ],
+  "flagWords": [],
+  "ignoreWords": [],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    "pnpm-lock.yaml",
+    ".changeset"
+  ],
+  "patterns": [
+    {
+      "name": "version",
+      "pattern": "\\d+\\.\\d+\\.\\d+"
+    },
+    {
+      "name": "uuid",
+      "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    }
+  ]
+}
