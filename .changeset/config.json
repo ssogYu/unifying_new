@@ -3,7 +3,7 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "your-github-repo"
+      "repo": "git@github.com:ssogYu/pnpm_monorepo_template.git"
     }
   ],
   "commit": true,
