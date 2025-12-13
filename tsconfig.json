@@ -18,9 +18,9 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@monorepo/core": ["packages/core/src"],
-      "@monorepo/utils": ["packages/utils/src"],
-      "@monorepo/components": ["packages/components/src"]
+      "@unifying/core": ["packages/core/src"],
+      "@unifying/utils": ["packages/utils/src"],
+      "@unifying/components": ["packages/components/src"]
     }
   },
   "exclude": ["node_modules", "dist", "build"]

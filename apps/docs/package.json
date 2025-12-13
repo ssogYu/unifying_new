@@ -16,9 +16,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@monorepo/components": "workspace:*",
-    "@monorepo/core": "workspace:*",
-    "@monorepo/utils": "workspace:*",
+    "@unifying/components": "workspace:*",
+    "@unifying/core": "workspace:*",
+    "@unifying/utils": "workspace:*",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },

@@ -94,9 +94,9 @@ asdf install
 
 ```typescript
 // 可以直接使用别名导入
-import { add } from '@monorepo/core';
-import { isEmpty } from '@monorepo/utils';
-import { Button } from '@monorepo/components';
+import { add } from '@unifying/core';
+import { isEmpty } from '@unifying/utils';
+import { Button } from '@unifying/components';
 ```
 
 **编译目标**: ES2020  
@@ -150,7 +150,7 @@ pnpm format:check    # 检查格式是否符合要求
 ```bash
 pnpm lint            # 检查所有包
 pnpm lint:fix        # 自动修复
-pnpm -F @monorepo/core lint     # 检查特定包
+pnpm -F @unifying/core lint     # 检查特定包
 ```
 
 ---
@@ -267,7 +267,7 @@ git cz
 
 ```bash
 pnpm build           # 构建所有包
-pnpm -F @monorepo/core build    # 构建特定包
+pnpm -F @unifying/core build    # 构建特定包
 pnpm dev             # 开发模式（监听文件变化）
 ```
 
@@ -295,7 +295,7 @@ pnpm dev             # 开发模式（监听文件变化）
 ```json
 {
   "dependencies": {
-    "@monorepo/core": "workspace:*"
+    "@unifying/core": "workspace:*"
   }
 }
 ```
@@ -318,7 +318,7 @@ pnpm dev             # 开发模式（监听文件变化）
 
 ```bash
 # 给特定包添加依赖
-pnpm add -F @monorepo/components react react-dom
+pnpm add -F @unifying/components react react-dom
 
 # 给根目录添加开发依赖
 pnpm add -D -w typescript eslint
@@ -331,9 +331,9 @@ pnpm update
 
 ```typescript
 // 在 apps/docs 中导入其他包
-import { add } from '@monorepo/core';
-import { isEmpty } from '@monorepo/utils';
-import { Button } from '@monorepo/components';
+import { add } from '@unifying/core';
+import { isEmpty } from '@unifying/utils';
+import { Button } from '@unifying/components';
 ```
 
 ---
@@ -357,9 +357,9 @@ pnpm changeset
 **交互式提示**:
 
 ```
-Which packages would you like to include? › @monorepo/core
+Which packages would you like to include? › @unifying/core
 Which packages should have a major bump? › none
-What kind of change is this for @monorepo/core? › Patch
+What kind of change is this for @unifying/core? › Patch
 Describe the change: Added new utility function
 ```
 
@@ -392,10 +392,10 @@ pnpm changeset:publish
 
 ```bash
 # 检查 npm 上的包
-npm info @monorepo/core
+npm info @unifying/core
 
 # 在其他项目中安装使用
-npm install @monorepo/core
+npm install @unifying/core
 ```
 
 ---
@@ -470,9 +470,9 @@ monorepo/
 
 | 包名                   | 位置                   | 类型 | 描述                     |
 | ---------------------- | ---------------------- | ---- | ------------------------ |
-| `@monorepo/core`       | `packages/core/`       | 库   | 核心业务逻辑（数学函数） |
-| `@monorepo/utils`      | `packages/utils/`      | 库   | 通用工具函数             |
-| `@monorepo/components` | `packages/components/` | 库   | React 组件库             |
+| `@unifying/core`       | `packages/core/`       | 库   | 核心业务逻辑（数学函数） |
+| `@unifying/utils`      | `packages/utils/`      | 库   | 通用工具函数             |
+| `@unifying/components` | `packages/components/` | 库   | React 组件库             |
 | `monorepo` (docs)      | `apps/docs/`           | 应用 | Vite React 应用示例      |
 
 ---
@@ -545,7 +545,7 @@ mkdir -p packages/new-package/src
 # 2. 创建 package.json
 cat > packages/new-package/package.json << 'EOF'
 {
-  "name": "@monorepo/new-package",
+  "name": "@unifying/new-package",
   "version": "1.0.0",
   "description": "New package",
   "private": true,
@@ -603,7 +603,7 @@ pnpm create vite apps/my-app --template react-ts
 cd apps/my-app
 
 # 添加 monorepo 包依赖
-pnpm add @monorepo/core @monorepo/utils @monorepo/components
+pnpm add @unifying/core @unifying/utils @unifying/components
 
 # 开发
 pnpm dev
@@ -623,10 +623,10 @@ pnpm dev
 pnpm build
 
 # 开发特定包
-pnpm -F @monorepo/core dev
+pnpm -F @unifying/core dev
 
 # 构建特定包
-pnpm -F @monorepo/components build
+pnpm -F @unifying/components build
 ```
 
 ### 📝 代码质量
@@ -667,16 +667,16 @@ pnpm install
 pnpm update
 
 # 给特定包添加依赖
-pnpm add -F @monorepo/core lodash
+pnpm add -F @unifying/core lodash
 
 # 给特定包添加开发依赖
-pnpm add -D -F @monorepo/core vitest
+pnpm add -D -F @unifying/core vitest
 
 # 给根目录添加依赖（工作区级）
 pnpm add -w -D some-tool
 
 # 删除依赖
-pnpm remove @monorepo/utils
+pnpm remove @unifying/utils
 
 # 查看依赖树
 pnpm ls
@@ -695,10 +695,10 @@ pnpm -r build
 pnpm -r --parallel dev
 
 # 仅在特定包中运行
-pnpm -F @monorepo/core build
+pnpm -F @unifying/core build
 
 # 在特定包及其依赖中运行
-pnpm -F @monorepo/core --recursive build
+pnpm -F @unifying/core --recursive build
 ```
 
 ### 🌿 Git 和发布
@@ -730,7 +730,7 @@ pnpm prepare
 pnpm ls -r --depth 0
 
 # 查看特定包的详情
-pnpm info @monorepo/core
+pnpm info @unifying/core
 
 # 检查过时的依赖
 pnpm outdated
@@ -791,7 +791,7 @@ TypeScript 基础配置和路径别名：
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "paths": {
-      "@monorepo/*": ["packages/*/src"]
+      "@unifying/*": ["packages/*/src"]
     }
   }
 }
@@ -799,9 +799,9 @@ TypeScript 基础配置和路径别名：
 
 **路径别名说明**:
 
-- `@monorepo/core` → `packages/core/src`
-- `@monorepo/utils` → `packages/utils/src`
-- `@monorepo/components` → `packages/components/src`
+- `@unifying/core` → `packages/core/src`
+- `@unifying/utils` → `packages/utils/src`
+- `@unifying/components` → `packages/components/src`
 
 ### tsconfig.json (各包)
 
@@ -913,7 +913,7 @@ git checkout -b fix/bug-name
 
 ```bash
 # 在特定包中开发（监听文件变化）
-pnpm -F @monorepo/core dev
+pnpm -F @unifying/core dev
 ```
 
 #### 3. 代码检查
@@ -945,7 +945,7 @@ pnpm format
 pnpm build
 
 # 验证特定包
-pnpm -F @monorepo/core build
+pnpm -F @unifying/core build
 ```
 
 #### 6. 提交代码
@@ -1017,10 +1017,10 @@ pnpm changeset
 
 # 选择需要发布的包
 # ? Which packages would you like to include?
-# ✔ @monorepo/core
+# ✔ @unifying/core
 
 # 选择版本提升类型
-# ? What kind of change is this for @monorepo/core?
+# ? What kind of change is this for @unifying/core?
 # ✔ patch
 
 # 输入变更描述
@@ -1032,8 +1032,8 @@ pnpm changeset
 
 ```markdown
 ---
-'@monorepo/core': patch
-'@monorepo/utils': minor
+'@unifying/core': patch
+'@unifying/utils': minor
 ---
 
 Fixed critical bug in core package
@@ -1065,13 +1065,13 @@ pnpm changeset:publish
 
 ```bash
 # 检查 npm 上的包版本
-npm info @monorepo/core
+npm info @unifying/core
 
 # 或在网上查看
-# https://www.npmjs.com/package/@monorepo/core
+# https://www.npmjs.com/package/@unifying/core
 
 # 在其他项目安装验证
-npm install @monorepo/core@latest
+npm install @unifying/core@latest
 ```
 
 ### 版本号规则
@@ -1209,7 +1209,7 @@ asdf install
 
 ```typescript
 // packages/components/src/index.tsx
-import { add } from '@monorepo/core';
+import { add } from '@unifying/core';
 
 export const MyComponent = () => {
   return <div>{add(1, 2)}</div>;
@@ -1222,7 +1222,7 @@ export const MyComponent = () => {
 
 ```bash
 # 给特定包添加依赖
-pnpm add -F @monorepo/core lodash
+pnpm add -F @unifying/core lodash
 
 # 给根目录添加开发依赖（所有包可用）
 pnpm add -D -w typescript eslint
@@ -1340,15 +1340,15 @@ changeset publish --tag alpha
 
 ```bash
 # 使用 npm deprecate 标记为已废弃
-npm deprecate @monorepo/core@1.0.0 "This version has critical bugs"
+npm deprecate @unifying/core@1.0.0 "This version has critical bugs"
 
 # 或 unpublish（不推荐，最好发布补丁版本）
-npm unpublish @monorepo/core@1.0.0 --force
+npm unpublish @unifying/core@1.0.0 --force
 ```
 
 ### 错误排查
 
-#### Q: "找不到模块 @monorepo/core" 错误
+#### Q: "找不到模块 @unifying/core" 错误
 
 **A**:
 
@@ -1363,7 +1363,7 @@ pnpm install
 cat tsconfig.json | grep -A 5 '"paths"'
 
 # 4. 确保导入路径正确
-import { add } from '@monorepo/core';  // ✓ 正确
+import { add } from '@unifying/core';  // ✓ 正确
 import { add } from '../packages/core'; // ✗ 错误
 ```
 

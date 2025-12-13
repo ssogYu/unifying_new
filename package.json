@@ -1,5 +1,5 @@
 {
-  "name": "monorepo",
+  "name": "unifying",
   "version": "1.0.0",
   "description": "A modern monorepo project using pnpm",
   "private": true,

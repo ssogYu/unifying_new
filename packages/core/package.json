@@ -1,5 +1,5 @@
 {
-  "name": "@monorepo/core",
+  "name": "@unifying/core",
   "version": "1.0.0",
   "description": "Core library package",
   "private": true,

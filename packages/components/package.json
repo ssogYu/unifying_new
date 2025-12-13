@@ -1,5 +1,5 @@
 {
-  "name": "@monorepo/components",
+  "name": "@unifying/components",
   "version": "1.0.0",
   "description": "React components library",
   "private": true,
@@ -26,7 +26,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "dependencies": {
-    "@monorepo/utils": "workspace:*"
+    "@unifying/utils": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

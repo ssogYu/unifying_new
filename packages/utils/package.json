@@ -1,5 +1,5 @@
 {
-  "name": "@monorepo/utils",
+  "name": "@unifying/utils",
   "version": "1.0.0",
   "description": "Utility functions library",
   "private": true,

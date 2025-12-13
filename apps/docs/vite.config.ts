@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@monorepo/core': path.resolve(__dirname, '../../packages/core/src'),
-      '@monorepo/utils': path.resolve(__dirname, '../../packages/utils/src'),
-      '@monorepo/components': path.resolve(__dirname, '../../packages/components/src'),
+      '@unifying/core': path.resolve(__dirname, '../../packages/core/src'),
+      '@unifying/utils': path.resolve(__dirname, '../../packages/utils/src'),
+      '@unifying/components': path.resolve(__dirname, '../../packages/components/src'),
     },
   },
   server: {
