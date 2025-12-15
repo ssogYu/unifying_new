@@ -12,11 +12,8 @@ import axios, {
 import type {
   HttpClientConfig,
   HttpResponse,
-  RequestInterceptor,
-  ResponseInterceptor,
-  ErrorInterceptor,
-  RequestContext,
   HttpErrorDetail,
+  RequestContext,
 } from './types'
 import { HttpError } from './types'
 import {
@@ -30,98 +27,63 @@ import {
 } from './utils'
 import type { ILogger } from './logger'
 import { ConsoleLogger, NoOpLogger } from './logger'
+import { ConfigManager } from './config'
+import { RequestContextManager } from './request-context'
+import { InterceptorManager } from './interceptors'
 
 /**
  * HTTP Client for making requests
  */
 export class HttpClient {
   private client: AxiosInstance
-  private config: HttpClientConfig
+  private configManager: ConfigManager
   private logger: ILogger
-  private requestInterceptors: RequestInterceptor[] = []
-  private responseInterceptors: ResponseInterceptor[] = []
-  private errorInterceptors: ErrorInterceptor[] = []
-  private requestContextMap = new Map<string, RequestContext>()
-  private abortControllers = new Map<string, AbortController>()
+  private interceptorManager: InterceptorManager
+  private contextManager: RequestContextManager
 
   constructor(config: HttpClientConfig = {}) {
-    this.config = this.normalizeConfig(config)
-    this.logger = this.config.enableLogging ? new ConsoleLogger() : new NoOpLogger()
+    this.configManager = new ConfigManager(config)
+    this.contextManager = new RequestContextManager()
+    this.interceptorManager = new InterceptorManager()
+
+    const normalizedConfig = this.configManager.get()
+    this.logger = normalizedConfig.enableLogging ? new ConsoleLogger() : new NoOpLogger()
 
     this.client = axios.create(this.createAxiosConfig())
     this.setupInterceptors()
   }
 
   /**
-   * Normalize configuration
-   */
-  private normalizeConfig(config: HttpClientConfig): HttpClientConfig {
-    return {
-      baseURL: config.baseURL || '',
-      timeout:
-        config.timeout && typeof config.timeout === 'number'
-          ? { request: config.timeout, response: config.timeout }
-          : (config.timeout as any) || { request: 30000, response: 30000 },
-      retry: {
-        maxRetries: config.retry?.maxRetries ?? 3,
-        retryDelay: config.retry?.retryDelay ?? 1000,
-        retryStatusCodes: config.retry?.retryStatusCodes || [],
-        retryOnNetworkError: config.retry?.retryOnNetworkError ?? true,
-      },
-      enableLogging: config.enableLogging ?? false,
-      headers: config.headers || {},
-      successStatusCodes: config.successStatusCodes || [],
-    }
-  }
-
-  /**
-   * Create Axios configuration
+   * Create Axios configuration from config manager
    */
   private createAxiosConfig(): AxiosRequestConfig {
-    const timeoutConfig = this.config.timeout as any
+    const config = this.configManager.get()
+    const timeoutConfig = config.timeout as any
     return {
-      baseURL: this.config.baseURL,
+      baseURL: config.baseURL,
       timeout: timeoutConfig.request,
       headers: {
         'Content-Type': 'application/json',
-        ...this.config.headers,
+        ...config.headers,
       },
       validateStatus: () => true, // Don't throw on any status code
     }
   }
 
   /**
-   * Setup interceptors
+   * Setup Axios interceptors
    */
   private setupInterceptors(): void {
     // Request interceptor
     this.client.interceptors.request.use(
       async (config: any) => {
-        // Check if this is a retry (requestId already exists in config)
-        let requestId = config.headers['X-Request-ID']
-        let context: RequestContext
+        const requestId = this.getOrCreateRequestId(config)
+        const context = this.contextManager.getContext(requestId) || this.contextManager.createContext(requestId)
 
-        if (requestId && this.requestContextMap.has(requestId)) {
-          // This is a retry, reuse existing context
-          context = this.requestContextMap.get(requestId)!
-        } else {
-          // New request, generate new requestId
-          requestId = generateRequestId()
-          config.headers['X-Request-ID'] = requestId
-          context = {
-            requestId,
-            startTime: Date.now(),
-            retryCount: 0,
-          }
-          this.requestContextMap.set(requestId, context)
-        }
-
-        // Create AbortController for this request if not already created
-        if (!this.abortControllers.has(requestId)) {
-          const controller = new AbortController()
-          config.signal = controller.signal
-          this.abortControllers.set(requestId, controller)
-        }
+        // Setup abort signal
+        const controller = this.contextManager.getOrCreateAbortController(requestId)
+        config.signal = controller.signal
+        config.headers['X-Request-ID'] = requestId
 
         this.logger.debug(`[${requestId}] Request started`, {
           method: config.method?.toUpperCase(),
@@ -131,13 +93,13 @@ export class HttpClient {
 
         // Apply custom request interceptors
         let modifiedConfig = config
-        for (const interceptor of this.requestInterceptors) {
+        for (const interceptor of this.interceptorManager.getRequestInterceptors()) {
           modifiedConfig = await interceptor(modifiedConfig)
         }
 
-        // Ensure signal is set (in case it was lost in interceptors)
-        if (!modifiedConfig.signal && this.abortControllers.has(requestId)) {
-          modifiedConfig.signal = this.abortControllers.get(requestId)!.signal
+        // Preserve abort signal
+        if (!modifiedConfig.signal) {
+          modifiedConfig.signal = controller.signal
         }
 
         return modifiedConfig
@@ -152,8 +114,8 @@ export class HttpClient {
     this.client.interceptors.response.use(
       async (response: any) => {
         const requestId = response.config?.headers?.['X-Request-ID']
-        const context = requestId ? this.requestContextMap.get(requestId) : undefined
-        const duration = context ? Date.now() - (context.startTime || 0) : 0
+        const context = requestId ? this.contextManager.getContext(requestId) : undefined
+        const duration = this.contextManager.getDuration(requestId)
 
         const enhancedResponse: HttpResponse = {
           ...response,
@@ -166,9 +128,9 @@ export class HttpClient {
           duration: `${duration}ms`,
         })
 
-        // Only process status validation if it's not already successful
-        // Since validateStatus: () => true, all responses reach here
-        const isSuccess = isSuccessStatusCode(response.status, this.config.successStatusCodes)
+        // Validate response status
+        const config = this.configManager.get()
+        const isSuccess = isSuccessStatusCode(response.status, config.successStatusCodes)
         if (!isSuccess) {
           const error = this.createHttpError(response, context)
           throw error
@@ -176,7 +138,7 @@ export class HttpClient {
 
         // Apply custom response interceptors
         let modifiedResponse = enhancedResponse
-        for (const interceptor of this.responseInterceptors) {
+        for (const interceptor of this.interceptorManager.getResponseInterceptors()) {
           try {
             const result = await interceptor(modifiedResponse)
             if (result) {
@@ -184,7 +146,6 @@ export class HttpClient {
             }
           } catch (interceptorError) {
             this.logger.error(`[${requestId || 'UNKNOWN'}] Response interceptor error`, interceptorError)
-            // If the error is an AxiosError, use createHttpError, otherwise throw
             if (interceptorError instanceof Error && ('response' in interceptorError || 'request' in interceptorError)) {
               throw this.createHttpError(interceptorError as AxiosError, context)
             }
@@ -194,15 +155,14 @@ export class HttpClient {
 
         // Clean up request context
         if (requestId) {
-          this.requestContextMap.delete(requestId)
-          this.abortControllers.delete(requestId)
+          this.contextManager.removeContext(requestId)
         }
 
         return modifiedResponse
       },
       async (error: AxiosError) => {
         const requestId = error.config?.headers?.['X-Request-ID'] || 'UNKNOWN'
-        const context = this.requestContextMap.get(requestId as string)
+        const context = this.contextManager.getContext(requestId as string)
 
         this.logger.warn(`[${requestId}] Response error received`, {
           status: error.response?.status,
@@ -211,7 +171,7 @@ export class HttpClient {
 
         // Apply custom error interceptors
         let handledError = error
-        for (const interceptor of this.errorInterceptors) {
+        for (const interceptor of this.interceptorManager.getErrorInterceptors()) {
           try {
             const result = await interceptor(handledError)
             if (result) {
@@ -226,24 +186,25 @@ export class HttpClient {
         // Retry logic
         const config = error.config
         if (config && context && this.shouldRetry(handledError, context)) {
-          context.retryCount = (context.retryCount || 0) + 1
-          const delay = calculateBackoffDelay(context.retryCount - 1, this.config.retry!.retryDelay)
+          this.contextManager.updateContext(requestId as string, {
+            retryCount: (context.retryCount || 0) + 1,
+          })
+          const updatedContext = this.contextManager.getContext(requestId as string)!
+          const clientConfig = this.configManager.get()
+          const retryCount = updatedContext.retryCount || 0
+          const delay = calculateBackoffDelay(retryCount - 1, clientConfig.retry!.retryDelay)
 
           this.logger.info(
-            `[${requestId}] Retrying request (attempt ${context.retryCount}/${this.config.retry!.maxRetries}) after ${delay}ms`
+            `[${requestId}] Retrying request (attempt ${updatedContext.retryCount}/${clientConfig.retry!.maxRetries}) after ${delay}ms`
           )
 
           await this.sleep(delay)
-          // Ensure requestId is preserved in config for retry (so request interceptor can reuse it)
-          if (typeof requestId === 'string') {
-            config.headers['X-Request-ID'] = requestId
-          }
+          config.headers['X-Request-ID'] = requestId
           return this.client.request(config)
         }
 
         // Clean up request context
-        this.requestContextMap.delete(requestId as string)
-        this.abortControllers.delete(requestId as string)
+        this.contextManager.removeContext(requestId as string)
 
         throw this.createHttpError(handledError, context)
       }
@@ -251,20 +212,30 @@ export class HttpClient {
   }
 
   /**
+   * Get or create request ID
+   */
+  private getOrCreateRequestId(config: any): string {
+    let requestId = config.headers?.['X-Request-ID']
+    if (!requestId) {
+      requestId = generateRequestId()
+    }
+    return requestId
+  }
+
+  /**
    * Check if request should be retried
    */
-  private shouldRetry(error: AxiosError, context?: RequestContext): boolean {
-    if (!context || !this.config.retry || (context.retryCount ?? 0) >= this.config.retry.maxRetries!) {
+  private shouldRetry(error: AxiosError, context?: any): boolean {
+    const config = this.configManager.get()
+    if (!context || !config.retry || (context.retryCount ?? 0) >= config.retry.maxRetries!) {
       return false
     }
 
     if (error.response) {
-      // HTTP error - check retry status codes
-      return isRetryableError(error, this.config.retry.retryStatusCodes)
+      return isRetryableError(error, config.retry.retryStatusCodes)
     }
 
-    // Network error
-    return this.config.retry.retryOnNetworkError ?? true
+    return config.retry.retryOnNetworkError ?? true
   }
 
   /**
@@ -274,6 +245,7 @@ export class HttpClient {
     errorOrResponse: AxiosError | AxiosResponse,
     context?: RequestContext
   ): HttpError {
+    const config = this.configManager.get()
     const isAxiosError = 'response' in errorOrResponse || 'request' in errorOrResponse
 
     if (isAxiosError) {
@@ -282,7 +254,7 @@ export class HttpClient {
         code: getErrorCode(error),
         message: parseErrorMessage(error),
         status: error.response?.status,
-        isRetryable: isRetryableError(error, this.config.retry?.retryStatusCodes),
+        isRetryable: isRetryableError(error, config.retry?.retryStatusCodes),
         context: {
           requestId: context?.requestId,
           retryCount: context?.retryCount,
@@ -298,7 +270,7 @@ export class HttpClient {
       code: response.status,
       message: parseErrorMessage(response),
       status: response.status,
-      isRetryable: isRetryableError(response, this.config.retry?.retryStatusCodes),
+      isRetryable: isRetryableError(response, config.retry?.retryStatusCodes),
       context: {
         requestId: context?.requestId,
         retryCount: context?.retryCount,
@@ -315,22 +287,14 @@ export class HttpClient {
   }
 
   /**
-   * Add request interceptor
+   * Add custom interceptors
    */
   public use(interceptor: {
-    request?: RequestInterceptor
-    response?: ResponseInterceptor
-    error?: ErrorInterceptor
+    request?: any
+    response?: any
+    error?: any
   }): void {
-    if (interceptor.request) {
-      this.requestInterceptors.push(interceptor.request)
-    }
-    if (interceptor.response) {
-      this.responseInterceptors.push(interceptor.response)
-    }
-    if (interceptor.error) {
-      this.errorInterceptors.push(interceptor.error)
-    }
+    this.interceptorManager.use(interceptor)
   }
 
   /**
@@ -391,14 +355,14 @@ export class HttpClient {
    * Update configuration
    */
   public setConfig(config: Partial<HttpClientConfig>): void {
-    this.config = { ...this.config, ...this.normalizeConfig(config) }
+    this.configManager.update(config)
   }
 
   /**
    * Get current configuration
    */
   public getConfig(): HttpClientConfig {
-    return { ...this.config }
+    return this.configManager.get()
   }
 
   /**
@@ -412,34 +376,33 @@ export class HttpClient {
    * Clear all interceptors
    */
   public clearInterceptors(): void {
-    this.requestInterceptors = []
-    this.responseInterceptors = []
-    this.errorInterceptors = []
+    this.interceptorManager.clear()
   }
 
   /**
    * Cancel a specific request by request ID
    */
   public cancelRequest(requestId: string, reason?: string): void {
-    const controller = this.abortControllers.get(requestId)
-    if (controller) {
-      controller.abort()
-      this.abortControllers.delete(requestId)
-      this.requestContextMap.delete(requestId)
-      this.logger.info(`[${requestId}] Request cancelled: ${reason || 'Manual cancellation'}`)
-    }
+    this.contextManager.abort(requestId, reason)
+    this.logger.info(`[${requestId}] Request cancelled: ${reason || 'Manual cancellation'}`)
   }
 
   /**
    * Cancel all pending requests
    */
   public cancelAllRequests(reason?: string): void {
-    this.abortControllers.forEach((controller, requestId) => {
-      controller.abort()
+    const pendingIds = this.contextManager.getPendingRequestIds()
+    pendingIds.forEach((requestId) => {
       this.logger.info(`[${requestId}] Request cancelled: ${reason || 'Cancel all'}`)
     })
-    this.abortControllers.clear()
-    this.requestContextMap.clear()
+    this.contextManager.abortAll(reason)
+  }
+
+  /**
+   * Get pending request IDs
+   */
+  public getPendingRequestIds(): string[] {
+    return this.contextManager.getPendingRequestIds()
   }
 
   /**
@@ -448,7 +411,6 @@ export class HttpClient {
   public destroy(): void {
     this.cancelAllRequests('Client destroyed')
     this.clearInterceptors()
-    this.requestContextMap.clear()
-    this.abortControllers.clear()
+    this.contextManager.clear()
   }
 }

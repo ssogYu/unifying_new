@@ -38,24 +38,73 @@
 
 ```
 http/
-├── client.ts      # HttpClient 主类
-├── types.ts       # 类型定义
-├── utils.ts       # 工具函数
-├── logger.ts      # 日志系统
-├── index.ts       # 模块导出和便利方法
-└── README.md      # 本文档
+├── client.ts              # HttpClient 主类 - 核心客户端实现
+├── config.ts              # ConfigManager - 配置管理和验证
+├── request-context.ts     # RequestContextManager - 请求生命周期管理
+├── interceptors.ts        # InterceptorManager - 拦截器管理
+├── types.ts               # 类型定义和接口
+├── utils.ts               # 工具函数（重试、日志、错误处理等）
+├── logger.ts              # 日志系统（ConsoleLogger、NoOpLogger）
+├── index.ts               # 模块导出和便利方法
+└── README.md              # 本文档
 ```
+
+### 核心模块职责
+
+#### 1. **HttpClient** (`client.ts`)
+
+- HTTP 请求的主要入口
+- 管理 Axios 实例
+- 协调其他管理器的工作
+- 提供 GET/POST/PUT/PATCH/DELETE 等 HTTP 方法
+
+#### 2. **ConfigManager** (`config.ts`)
+
+- 配置的规范化和验证
+- 配置更新和合并
+- 默认值管理
+- 配置验证
+
+#### 3. **RequestContextManager** (`request-context.ts`)
+
+- 请求上下文生命周期管理
+- AbortController 管理
+- 请求追踪和取消
+- 持续时间计算
+
+#### 4. **InterceptorManager** (`interceptors.ts`)
+
+- 拦截器的注册和管理
+- 请求/响应/错误拦截器的存储和检索
 
 ### 设计模式
 
 #### 1. **单一职责原则**
 
-- `client.ts`：HTTP 请求和响应管理
+每个模块职责清晰，各司其职：
+
+- `client.ts`：HTTP 请求编排和生命周期管理
+- `config.ts`：配置管理和验证
+- `request-context.ts`：请求追踪和取消管理
+- `interceptors.ts`：拦截器注册和执行
 - `logger.ts`：日志记录功能
 - `utils.ts`：工具函数和辅助方法
 - `types.ts`：类型定义
 
-#### 2. **工厂模式**
+#### 2. **依赖注入 + 组合**
+
+HttpClient 通过组合模式使用各个管理器，易于测试和扩展：
+
+```typescript
+const client = new HttpClient({
+  baseURL: 'https://api.example.com',
+  enableLogging: true,
+});
+
+// 内部使用 ConfigManager、RequestContextManager、InterceptorManager
+```
+
+#### 3. **工厂模式**
 
 ```typescript
 // 创建自定义客户端
@@ -65,7 +114,7 @@ const client = createHttpClient(config);
 const defaultClient = getDefaultHttpClient();
 ```
 
-#### 3. **拦截器模式**
+#### 4. **拦截器模式**
 
 支持三种拦截器链：
 
@@ -379,6 +428,126 @@ getAxiosInstance(): AxiosInstance
 ```
 
 获取底层的 Axios 实例。
+
+#### getPendingRequestIds()
+
+```typescript
+getPendingRequestIds(): string[]
+```
+
+获取所有待处理请求的 ID 列表。
+
+### 管理器类 API
+
+#### ConfigManager
+
+用于管理和验证 HTTP 客户端配置：
+
+```typescript
+import { ConfigManager } from '@unifying/core';
+
+const configManager = new ConfigManager({
+  baseURL: 'https://api.example.com',
+  timeout: 30000,
+});
+
+// 获取配置
+const config = configManager.get();
+
+// 更新配置
+configManager.update({ baseURL: 'https://api.new.com' });
+
+// 验证配置
+const { valid, errors } = configManager.validate();
+```
+
+**主要方法**：
+
+- `get()` - 获取当前配置
+- `getValue(key)` - 获取特定配置值
+- `update(updates)` - 更新配置
+- `merge(updates)` - 合并配置
+- `validate()` - 验证配置有效性
+- `reset()` - 重置为默认配置
+
+#### RequestContextManager
+
+用于管理请求生命周期、追踪和取消：
+
+```typescript
+import { RequestContextManager } from '@unifying/core';
+
+const contextManager = new RequestContextManager();
+
+// 创建请求上下文
+const context = contextManager.createContext('req_123');
+
+// 获取上下文
+const ctx = contextManager.getContext('req_123');
+
+// 获取请求耗时
+const duration = contextManager.getDuration('req_123');
+
+// 取消请求
+contextManager.abort('req_123', '用户取消');
+
+// 取消所有请求
+contextManager.abortAll('应用关闭');
+```
+
+**主要方法**：
+
+- `createContext(requestId)` - 创建新的请求上下文
+- `getContext(requestId)` - 获取上下文
+- `updateContext(requestId, updates)` - 更新上下文
+- `removeContext(requestId)` - 移除上下文
+- `getOrCreateAbortController(requestId)` - 获取或创建 AbortController
+- `getDuration(requestId)` - 获取请求耗时
+- `abort(requestId, reason)` - 中止指定请求
+- `abortAll(reason)` - 中止所有请求
+- `getPendingRequestIds()` - 获取待处理请求 ID 列表
+
+#### InterceptorManager
+
+用于管理拦截器：
+
+```typescript
+import { InterceptorManager } from '@unifying/core';
+
+const interceptorManager = new InterceptorManager();
+
+// 添加拦截器
+interceptorManager.use({
+  request: async (config) => {
+    // 修改请求配置
+    return config;
+  },
+  response: async (response) => {
+    // 处理响应
+    return response;
+  },
+  error: async (error) => {
+    // 处理错误
+    return error;
+  },
+});
+
+// 获取拦截器列表
+const requestInterceptors = interceptorManager.getRequestInterceptors();
+const responseInterceptors = interceptorManager.getResponseInterceptors();
+const errorInterceptors = interceptorManager.getErrorInterceptors();
+
+// 清除所有拦截器
+interceptorManager.clear();
+```
+
+**主要方法**：
+
+- `use(interceptor)` - 添加拦截器
+- `getRequestInterceptors()` - 获取请求拦截器列表
+- `getResponseInterceptors()` - 获取响应拦截器列表
+- `getErrorInterceptors()` - 获取错误拦截器列表
+- `clear()` - 清除所有拦截器
 
 ### 模块级函数
 
