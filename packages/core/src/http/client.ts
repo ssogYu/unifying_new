@@ -97,15 +97,31 @@ export class HttpClient {
     // Request interceptor
     this.client.interceptors.request.use(
       async (config: any) => {
-        const requestId = generateRequestId()
-        config.headers['X-Request-ID'] = requestId
+        // Check if this is a retry (requestId already exists in config)
+        let requestId = config.headers['X-Request-ID']
+        let context: RequestContext
 
-        const context: RequestContext = {
-          requestId,
-          startTime: Date.now(),
-          retryCount: 0,
+        if (requestId && this.requestContextMap.has(requestId)) {
+          // This is a retry, reuse existing context
+          context = this.requestContextMap.get(requestId)!
+        } else {
+          // New request, generate new requestId
+          requestId = generateRequestId()
+          config.headers['X-Request-ID'] = requestId
+          context = {
+            requestId,
+            startTime: Date.now(),
+            retryCount: 0,
+          }
+          this.requestContextMap.set(requestId, context)
         }
-        this.requestContextMap.set(requestId, context)
+
+        // Create AbortController for this request if not already created
+        if (!this.abortControllers.has(requestId)) {
+          const controller = new AbortController()
+          config.signal = controller.signal
+          this.abortControllers.set(requestId, controller)
+        }
 
         this.logger.debug(`[${requestId}] Request started`, {
           method: config.method?.toUpperCase(),
@@ -117,6 +133,11 @@ export class HttpClient {
         let modifiedConfig = config
         for (const interceptor of this.requestInterceptors) {
           modifiedConfig = await interceptor(modifiedConfig)
+        }
+
+        // Ensure signal is set (in case it was lost in interceptors)
+        if (!modifiedConfig.signal && this.abortControllers.has(requestId)) {
+          modifiedConfig.signal = this.abortControllers.get(requestId)!.signal
         }
 
         return modifiedConfig
@@ -213,6 +234,10 @@ export class HttpClient {
           )
 
           await this.sleep(delay)
+          // Ensure requestId is preserved in config for retry (so request interceptor can reuse it)
+          if (typeof requestId === 'string') {
+            config.headers['X-Request-ID'] = requestId
+          }
           return this.client.request(config)
         }
 
