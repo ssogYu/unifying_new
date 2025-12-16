@@ -1,7 +1,3 @@
-/**
- * HTTP Client - Main class for making HTTP requests
- */
-
 import axios, {
   type AxiosInstance,
   type AxiosRequestConfig,
@@ -30,10 +26,6 @@ import { ConsoleLogger, NoOpLogger } from './logger'
 import { ConfigManager } from './config'
 import { RequestContextManager } from './request-context'
 import { InterceptorManager } from './interceptors'
-
-/**
- * HTTP Client for making requests
- */
 export class HttpClient {
   private client: AxiosInstance
   private configManager: ConfigManager
@@ -78,7 +70,6 @@ export class HttpClient {
     this.client.interceptors.request.use(
       async (config: any) => {
         const requestId = this.getOrCreateRequestId(config)
-        const context = this.contextManager.getContext(requestId) || this.contextManager.createContext(requestId)
 
         // Setup abort signal
         const controller = this.contextManager.getOrCreateAbortController(requestId)
@@ -101,7 +92,7 @@ export class HttpClient {
         if (!modifiedConfig.signal) {
           modifiedConfig.signal = controller.signal
         }
-
+        
         return modifiedConfig
       },
       (error) => {
