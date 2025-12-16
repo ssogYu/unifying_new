@@ -2,7 +2,6 @@
   "name": "docs",
   "version": "1.0.0",
   "description": "Documentation site",
-  "private": true,
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
@@ -14,6 +13,9 @@
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "preview": "vite preview"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@unifying/core": "workspace:*",
