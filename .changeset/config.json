@@ -1,15 +1,9 @@
 {
-  "$schema": "https://unpkg.com/changesets@2.26.0/schema.json",
-  "changelog": [
-    "@changesets/changelog-github",
-    {
-      "repo": "git@github.com:ssogYu/pnpm_monorepo_template.git"
-    }
-  ],
-  "commit": true,
+  "changelog": ["@changesets/cli/changelog"],
+  "commit": false,
   "fixed": [],
   "linked": [],
-  "access": "restricted",
+  "access": "publish",
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
   "ignore": []
