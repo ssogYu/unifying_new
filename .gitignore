@@ -43,3 +43,5 @@ Thumbs.db
 
 # pnpm
 pnpm-lock.yaml
+
+.npmrc
