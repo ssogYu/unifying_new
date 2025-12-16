@@ -8,7 +8,6 @@ export default defineConfig({
     alias: {
       '@unifying/core': path.resolve(__dirname, '../../packages/core/src'),
       '@unifying/utils': path.resolve(__dirname, '../../packages/utils/src'),
-      '@unifying/components': path.resolve(__dirname, '../../packages/components/src'),
     },
   },
   server: {

@@ -2,7 +2,6 @@
   "name": "@unifying/core",
   "version": "1.0.0",
   "description": "Core library package",
-  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +10,9 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "dist"
