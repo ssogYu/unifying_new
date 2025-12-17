@@ -1,6 +1,6 @@
 {
   "name": "@unifying/core",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Core library package",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,5 +1,11 @@
 # @unifying/core
 
+## 1.0.3
+
+### Patch Changes
+
+- 665c615: publishtools
+
 ## 1.0.2
 
 ### Patch Changes
