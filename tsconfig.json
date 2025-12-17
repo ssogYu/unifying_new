@@ -19,7 +19,7 @@
     "baseUrl": ".",
     "paths": {
       "@unifying/core": ["packages/core/src"],
-      "@unifying/utils": ["packages/utils/src"],
+      "@unifying/tools": ["packages/tools/src"],
     }
   },
   "exclude": ["node_modules", "dist", "build"]

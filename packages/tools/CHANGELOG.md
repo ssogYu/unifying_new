@@ -1,4 +1,4 @@
-# @unifying/utils
+# @unifying/tools
 
 ## 1.0.2
 

@@ -95,7 +95,7 @@ asdf install
 ```typescript
 // 可以直接使用别名导入
 import { add } from '@unifying/core';
-import { isEmpty } from '@unifying/utils';
+import { isEmpty } from '@unifying/tools';
 import { Button } from '@unifying/components';
 ```
 
@@ -231,7 +231,7 @@ git commit -m "feat: 新增功能"
 
 **范围 (scope)** (可选):
 
-- `core`, `utils`, `components`, `docs` 等
+- `core`, `tools`, `components`, `docs` 等
 
 **示例**:
 
@@ -332,7 +332,7 @@ pnpm update
 ```typescript
 // 在 apps/docs 中导入其他包
 import { add } from '@unifying/core';
-import { isEmpty } from '@unifying/utils';
+import { isEmpty } from '@unifying/tools';
 import { Button } from '@unifying/components';
 ```
 
@@ -414,7 +414,7 @@ monorepo/
 │   │   ├── tsconfig.json
 │   │   └── tsup.config.ts
 │   │
-│   ├── utils/                  # 工具函数
+│   ├── tools/                  # 工具函数
 │   │   ├── src/
 │   │   │   └── index.ts        # 导出 isEmpty, isNumber 等
 │   │   ├── package.json
@@ -471,7 +471,7 @@ monorepo/
 | 包名                   | 位置                   | 类型 | 描述                     |
 | ---------------------- | ---------------------- | ---- | ------------------------ |
 | `@unifying/core`       | `packages/core/`       | 库   | 核心业务逻辑（数学函数） |
-| `@unifying/utils`      | `packages/utils/`      | 库   | 通用工具函数             |
+| `@unifying/tools`      | `packages/tools/`      | 库   | 通用工具函数             |
 | `@unifying/components` | `packages/components/` | 库   | React 组件库             |
 | `monorepo` (docs)      | `apps/docs/`           | 应用 | Vite React 应用示例      |
 
@@ -603,7 +603,7 @@ pnpm create vite apps/my-app --template react-ts
 cd apps/my-app
 
 # 添加 monorepo 包依赖
-pnpm add @unifying/core @unifying/utils @unifying/components
+pnpm add @unifying/core @unifying/tools @unifying/components
 
 # 开发
 pnpm dev
@@ -676,7 +676,7 @@ pnpm add -D -F @unifying/core vitest
 pnpm add -w -D some-tool
 
 # 删除依赖
-pnpm remove @unifying/utils
+pnpm remove @unifying/tools
 
 # 查看依赖树
 pnpm ls
@@ -800,7 +800,7 @@ TypeScript 基础配置和路径别名：
 **路径别名说明**:
 
 - `@unifying/core` → `packages/core/src`
-- `@unifying/utils` → `packages/utils/src`
+- `@unifying/tools` → `packages/tools/src`
 - `@unifying/components` → `packages/components/src`
 
 ### tsconfig.json (各包)
@@ -1033,11 +1033,11 @@ pnpm changeset
 ```markdown
 ---
 '@unifying/core': patch
-'@unifying/utils': minor
+'@unifying/tools': minor
 ---
 
 Fixed critical bug in core package
-Added new type guards in utils
+Added new type guards in tools
 ```
 
 #### 3. 提交变更到 Git
