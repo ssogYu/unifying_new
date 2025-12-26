@@ -1,5 +1,11 @@
 # @unifying/core
 
+## 1.1.0
+
+### Minor Changes
+
+- 7efb146: 重构http库
+
 ## 1.0.3
 
 ### Patch Changes
