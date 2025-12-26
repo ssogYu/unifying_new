@@ -1,123 +1,91 @@
-/**
- * HTTP Request library types
- */
-
 import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
 
-/**
- * Request retry configuration
- */
-export interface RetryConfig {
-  /** Maximum number of retries */
-  maxRetries?: number
-  /** Delay between retries in milliseconds */
-  retryDelay?: number
-  /** HTTP status codes that trigger a retry */
-  retryStatusCodes?: number[]
-  /** Whether to retry on network errors */
-  retryOnNetworkError?: boolean
-}
-
-/**
- * Timeout configuration
- */
-export interface TimeoutConfig {
-  /** Request timeout in milliseconds */
-  request?: number
-  /** Response timeout in milliseconds */
-  response?: number
-}
-
-/**
- * HTTP client configuration
- */
-export interface HttpClientConfig {
-  /** Base URL for all requests */
+export interface HttpConfig extends AxiosRequestConfig {
   baseURL?: string
-  /** Default timeout configuration */
-  timeout?: TimeoutConfig | number
-  /** Retry configuration */
-  retry?: RetryConfig
-  /** Whether to enable request logging */
-  enableLogging?: boolean
-  /** Request headers */
-  headers?: Record<string, string>
-  /** HTTP status codes considered successful */
-  successStatusCodes?: number[]
-}
-
-/**
- * Request context for interceptors
- */
-export interface RequestContext {
-  /** Number of retry attempts */
+  timeout?: number
   retryCount?: number
-  /** Request start time */
-  startTime?: number
-  /** Request ID for tracing */
-  requestId?: string
+  retryDelay?: number
+  enableCache?: boolean
+  cacheTime?: number
+  showErrorMessage?: boolean
+  showErrorDetail?: boolean
+  transformRequest?: (data: any) => any
+  transformResponse?: (data: any) => any
+  requestInterceptor?: (config: AxiosRequestConfig) => AxiosRequestConfig | Promise<AxiosRequestConfig>
+  requestInterceptorCatch?: (error: any) => any
+  responseInterceptor?: (response: AxiosResponse) => AxiosResponse | Promise<AxiosResponse>
+  responseInterceptorCatch?: (error: any) => any
 }
 
-/**
- * HTTP error details
- */
-export interface HttpErrorDetail {
-  code: string | number
+export interface RequestConfig extends HttpConfig {
+  skipErrorHandler?: boolean
+  skipAuth?: boolean
+  skipLoading?: boolean
+  loadingText?: string
+  customErrorMessage?: string
+  cancelKey?: string
+}
+
+export interface ResponseData<T = any> {
+  code: number
+  data: T
   message: string
-  status?: number
-  isRetryable: boolean
-  context?: Record<string, any>
+  success: boolean
+  timestamp?: number
 }
 
-/**
- * Response with metadata
- */
-export interface HttpResponse<T = any> extends AxiosResponse<T> {
-  /** Time taken to complete the request in milliseconds */
-  duration?: number
-  /** Request retry count */
-  retryCount?: number
+export interface HttpError extends Error {
+  config?: AxiosRequestConfig
+  code?: string
+  request?: any
+  response?: AxiosResponse<ResponseData>
+  isAxiosError: boolean
+  isCancel: boolean
+  isTimeout: boolean
+  isNetworkError: boolean
 }
 
-/**
- * HTTP error with details
- */
-export class HttpError extends Error implements HttpErrorDetail {
-  code: string | number
-  status?: number
-  isRetryable: boolean
-  context?: Record<string, any>
-
-  constructor(detail: HttpErrorDetail) {
-    super(detail.message)
-    this.name = 'HttpError'
-    this.code = detail.code
-    this.message = detail.message
-    this.status = detail.status
-    this.isRetryable = detail.isRetryable
-    this.context = detail.context
-
-    Object.setPrototypeOf(this, HttpError.prototype)
-  }
+export interface CacheConfig {
+  key: string
+  data: any
+  expireTime: number
+  timestamp: number
 }
 
-/**
- * Request interceptor type
- */
-export type RequestInterceptor = (
+export interface RetryConfig {
+  count: number
+  delay: number | ((retryCount: number) => number)
+  retryCondition?: (error: HttpError) => boolean
+}
+
+export interface RequestQueueItem {
   config: AxiosRequestConfig
-) => AxiosRequestConfig | Promise<AxiosRequestConfig>
+  resolve: (value: any) => void
+  reject: (reason?: any) => void
+}
 
-/**
- * Response interceptor type
- */
-export type ResponseInterceptor = (
-  response: AxiosResponse
-) => AxiosResponse | Promise<AxiosResponse>
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'
 
-/**
- * Error interceptor type
- */
-export type ErrorInterceptor = (
-  error: AxiosError
-) => AxiosError | void | Promise<AxiosError | void>
+export interface UploadProgressEvent {
+  loaded: number
+  total: number
+  progress: number
+}
+
+export interface DownloadProgressEvent {
+  loaded: number
+  total: number
+  progress: number
+}
+
+export interface UploadOptions extends RequestConfig {
+  file: File | Blob
+  fieldName?: string
+  data?: Record<string, any>
+  onProgress?: (progress: UploadProgressEvent) => void
+}
+
+export interface DownloadOptions extends RequestConfig {
+  onProgress?: (progress: DownloadProgressEvent) => void
+  filename?: string
+}
