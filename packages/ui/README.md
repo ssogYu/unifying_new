@@ -20,7 +20,32 @@ pnpm add @unifying/ui
 
 ## 使用
 
-### ES Module 方式（推荐）
+### 按需引入样式（推荐）
+
+组件内部已自动导入样式，无需手动引入。直接使用组件即可：
+
+```tsx
+import { Button } from '@unifying/ui';
+
+function App() {
+  return <Button type="primary">点击我</Button>;
+}
+```
+
+### 全局引入样式
+
+如果需要一次性引入所有组件的样式（不推荐，会增加包体积）：
+
+```tsx
+import '@unifying/ui/dist/styles.css';
+import { Button } from '@unifying/ui';
+
+function App() {
+  return <Button type="primary">点击我</Button>;
+}
+```
+
+### ES Module 方式
 
 适用于现代打包工具（Vite、Webpack、Rollup 等）：
 

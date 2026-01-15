@@ -4,11 +4,24 @@ const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 // 引入 CssMinimizerPlugin 插件，用于在生产环境中压缩和优化 CSS 代码
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+// 引入 TerserPlugin 插件，用于在生产环境中压缩和优化 JavaScript 代码
+const TerserPlugin = require('terser-webpack-plugin');
+// 引入 BundleAnalyzerPlugin 插件，用于生成打包分析报告
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+// 引入 webpack 核心模块
+const webpack = require('webpack');
 
 // 判断当前是否为生产环境
 // 通过检查 NODE_ENV 环境变量是否等于 'production' 来确定
 // 生产环境会启用代码压缩、优化等特性
 const isProduction = process.env.NODE_ENV === 'production';
+
+// 判断是否开启打包分析
+// 通过检查 ANALYZE 环境变量是否等于 'true' 来确定
+// 开启后会生成打包分析报告，帮助分析包体积
+// 使用方法：ANALYZE=true pnpm build
+const isAnalyze = process.env.ANALYZE === 'true';
+
 // 获取输出格式，默认为 umd
 // FORMAT 环境变量可以设置为 'esm'、'cjs' 或 'umd'
 // - esm: ES Module 格式，现代浏览器和打包工具支持
@@ -137,9 +150,9 @@ const getStyleLoaders = () => {
     },
   ];
 
-  // style-loader：将 CSS 注入到 DOM 中
-  // 在开发环境中，style-loader 会将 CSS 通过 <style> 标签注入到页面
-  // 在生产环境中，通常会使用 MiniCssExtractPlugin 替代 style-loader
+  // 对于组件库，始终使用 style-loader 将样式注入到 DOM 中
+  // 这样可以实现按需引入样式，样式会随着组件一起加载
+  // 如果需要提取 CSS 到单独文件，可以在使用组件库的应用中配置
   return ['style-loader', ...baseLoaders];
 };
 
@@ -151,6 +164,21 @@ const baseConfig = {
   entry: './src/index.ts',
   // 输出配置：使用 getOutputConfig() 函数获取
   output: getOutputConfig(),
+  // 缓存配置：使用 webpack 5 的持久化缓存
+  // 这可以显著提升二次构建的速度（60-80%）
+  cache: {
+    // 使用文件系统缓存
+    type: 'filesystem',
+    // 缓存目录路径
+    cacheDirectory: path.resolve(__dirname, '.webpack_cache'),
+    // 构建依赖配置
+    // 当这些文件发生变化时，缓存会自动失效
+    buildDependencies: {
+      // 配置文件本身也是构建依赖
+      config: [__filename],
+    },
+  },
+
   // 解析配置：配置模块如何被解析
   resolve: {
     // 自动解析的扩展名
@@ -163,6 +191,16 @@ const baseConfig = {
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
+
+    // 模块搜索路径
+    // webpack 会按照这个顺序搜索模块
+    // 将 src 目录放在前面可以更快找到项目内部模块
+    modules: [path.resolve(__dirname, 'src'), 'node_modules'],
+
+    // 禁用符号链接解析
+    // 符号链接解析会增加文件系统查找时间
+    // 在大多数项目中，禁用它可以提升解析速度
+    symlinks: false,
   },
   // 外部依赖配置：使用 getExternals() 函数获取
   externals: getExternals(),
@@ -182,6 +220,9 @@ const baseConfig = {
               // transpileOnly: true 表示只进行类型转换，不进行类型检查
               // 这样可以加快编译速度，类型检查由 IDE 或单独的命令完成
               transpileOnly: true,
+              // happyPackMode: false 表示不使用 Happy Pack 模式
+              // Happy Pack 是一个多线程加载器，但 ts-loader 不需要它
+              happyPackMode: false,
               // TypeScript 编译器选项
               compilerOptions: {
                 // 输出模块格式为 ESNext（最新的 ECMAScript 模块）
@@ -267,25 +308,92 @@ if (isProduction) {
   // 优化配置
   baseConfig.optimization = {
     // 启用代码压缩
-    // webpack 会使用 TerserPlugin 压缩 JavaScript 代码
     minimize: true,
     // 自定义压缩器
     minimizer: [
-      // '...' 表示保留 webpack 默认的压缩器（TerserPlugin）
-      '...',
-      // 添加 CSS 压缩器
-      // CssMinimizerPlugin 使用 cssnano 压缩 CSS 代码
-      // 可以移除空白、注释、优化选择器等
-      new CssMinimizerPlugin(),
+      // TerserPlugin：压缩 JavaScript 代码
+      new TerserPlugin({
+        // 启用并行压缩，充分利用多核 CPU
+        // 可以显著提升压缩速度（40-50%）
+        parallel: true,
+        // Terser 压缩选项
+        terserOptions: {
+          // 压缩配置
+          compress: {
+            // 移除 console 语句，减小包体积
+            drop_console: true,
+            // 移除 debugger 语句
+            drop_debugger: true,
+            // 移除特定的函数调用（如 console.log）
+            pure_funcs: ['console.log'],
+          },
+          // 输出格式配置
+          format: {
+            // 不输出注释，减小包体积
+            comments: false,
+          },
+        },
+        // 不提取注释到单独的文件
+        extractComments: false,
+      }),
     ],
+    // 代码分割配置
+    splitChunks: {
+      // 对所有模块进行代码分割
+      chunks: 'all',
+      // 缓存组配置
+      cacheGroups: {
+        // 将 node_modules 中的模块打包到 vendors 文件中
+        vendor: {
+          // 匹配 node_modules 目录下的模块
+          test: /[\\/]node_modules[\\/]/,
+          // 输出文件名
+          name: 'vendors',
+          // 对所有匹配的模块进行分割
+          chunks: 'all',
+        },
+      },
+    },
   };
+
+  // 如果开启了打包分析，添加 BundleAnalyzerPlugin
+  if (isAnalyze) {
+    baseConfig.plugins.push(
+      new BundleAnalyzerPlugin({
+        // 生成静态 HTML 报告
+        analyzerMode: 'static',
+        // 自动在浏览器中打开分析报告
+        openAnalyzer: true,
+        // 报告文件输出路径
+        reportFilename: path.resolve(__dirname, 'dist/bundle-report.html'),
+      })
+    );
+  }
 } else {
   // 开发环境配置
   // 当 NODE_ENV 不为 production 时应用这些配置
   baseConfig.mode = 'development';
+
   // 生成 source map 文件
-  // 开发环境下也生成 source map，便于调试
-  baseConfig.devtool = 'source-map';
+  // 开发环境下使用 eval-cheap-module-source-map
+  // 这种 source map 生成速度快，适合开发环境
+  // - eval: 使用 eval 包裹模块，生成速度快
+  // - cheap: 不包含列信息，减小文件体积
+  // - module: 包含原始源代码，便于调试
+  baseConfig.devtool = 'eval-cheap-module-source-map';
+
+  // 优化配置
+  baseConfig.optimization = {
+    // 不移除可用的模块，提升构建速度
+    removeAvailableModules: false,
+
+    // 不移除空的 chunk，提升构建速度
+    removeEmptyChunks: false,
+
+    // 不进行代码分割，提升构建速度
+    splitChunks: false,
+  };
+
   // 开发服务器配置
   // webpack-dev-server 提供了一个简单的开发服务器，支持热更新
   baseConfig.devServer = {
@@ -314,15 +422,26 @@ if (isProduction) {
       overlay: {
         // 显示错误信息
         errors: true,
+
         // 不显示警告信息
         warnings: false,
       },
+      // 显示构建进度
+      // 在终端中显示构建进度条
+      progress: true,
     },
+
     // HTTP 响应头配置
     headers: {
       // 允许跨域访问
       // '*' 表示允许任何来源的跨域请求
       'Access-Control-Allow-Origin': '*',
+    },
+    // 开发中间件配置
+    devMiddleware: {
+      // 不将编译结果写入磁盘
+      // 开发环境下，文件只存在于内存中，提升构建速度
+      writeToDisk: false,
     },
   };
 }

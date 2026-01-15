@@ -30,10 +30,12 @@
     "build:esm": "NODE_ENV=production FORMAT=esm webpack --config webpack.config.cjs",
     "build:cjs": "NODE_ENV=production FORMAT=cjs webpack --config webpack.config.cjs",
     "build:umd": "NODE_ENV=production FORMAT=umd webpack --config webpack.config.cjs",
+    "build:analyze": "ANALYZE=true pnpm build",
     "build:watch": "NODE_ENV=development webpack --config webpack.config.cjs --watch",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "clean": "rm -rf dist .webpack_cache"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -63,9 +65,11 @@
     "sass": "^1.69.0",
     "sass-loader": "^13.3.0",
     "style-loader": "^3.3.0",
+    "terser-webpack-plugin": "^5.3.10",
     "ts-loader": "^9.5.0",
     "typescript": "^5.0.0",
     "webpack": "^5.89.0",
+    "webpack-bundle-analyzer": "^4.10.1",
     "webpack-cli": "^5.1.0",
     "webpack-dev-server": "^4.15.0"
   },
