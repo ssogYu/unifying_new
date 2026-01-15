@@ -1,0 +1,11 @@
+node_modules
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+coverage
+.env*
+.DS_Store
+Thumbs.db
+eslint.config.js
+.prettierrc

@@ -1,0 +1,75 @@
+{
+  "name": "@unifying/ui",
+  "version": "1.0.0",
+  "description": "Enterprise UI component library based on React",
+  "type": "module",
+  "main": "./dist/index.cjs.js",
+  "module": "./dist/index.esm.js",
+  "browser": "./dist/index.umd.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=development webpack serve --config webpack.config.cjs",
+    "build": "pnpm build:types && pnpm build:esm && pnpm build:cjs && pnpm build:umd",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:esm": "NODE_ENV=production FORMAT=esm webpack --config webpack.config.cjs",
+    "build:cjs": "NODE_ENV=production FORMAT=cjs webpack --config webpack.config.cjs",
+    "build:umd": "NODE_ENV=production FORMAT=umd webpack --config webpack.config.cjs",
+    "build:watch": "NODE_ENV=development webpack --config webpack.config.cjs --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/webpack-env": "^1.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "css-loader": "^6.8.0",
+    "css-minimizer-webpack-plugin": "^5.0.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "less": "^4.2.0",
+    "less-loader": "^11.1.0",
+    "mini-css-extract-plugin": "^2.7.0",
+    "postcss": "^8.4.0",
+    "postcss-loader": "^7.3.0",
+    "prettier": "^3.0.0",
+    "sass": "^1.69.0",
+    "sass-loader": "^13.3.0",
+    "style-loader": "^3.3.0",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^4.15.0"
+  },
+  "dependencies": {
+    "classnames": "^2.3.0"
+  }
+}

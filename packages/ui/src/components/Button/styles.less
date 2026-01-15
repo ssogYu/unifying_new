@@ -1,0 +1,242 @@
+.un-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  user-select: none;
+  touch-action: manipulation;
+  line-height: 1.5715;
+  position: relative;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.045);
+
+  &:active {
+    box-shadow: none;
+    transform: translateY(2px);
+  }
+
+  &-small {
+    height: 24px;
+    padding: 0 7px;
+    font-size: 12px;
+    border-radius: 4px;
+  }
+
+  &-medium {
+    height: 32px;
+    padding: 0 15px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+
+  &-large {
+    height: 40px;
+    padding: 0 23px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  &-primary {
+    background: #1677ff;
+    border-color: #1677ff;
+    color: #fff;
+
+    &:hover:not(.un-btn-disabled) {
+      background: #4096ff;
+      border-color: #4096ff;
+    }
+
+    &:active:not(.un-btn-disabled) {
+      background: #0958d9;
+      border-color: #0958d9;
+    }
+  }
+
+  &-secondary {
+    background: #fff;
+    border-color: #d9d9d9;
+    color: rgba(0, 0, 0, 0.88);
+
+    &:hover:not(.un-btn-disabled) {
+      color: #1677ff;
+      border-color: #1677ff;
+    }
+
+    &:active:not(.un-btn-disabled) {
+      color: #0958d9;
+      border-color: #0958d9;
+    }
+  }
+
+  &-success {
+    background: #52c41a;
+    border-color: #52c41a;
+    color: #fff;
+
+    &:hover:not(.un-btn-disabled) {
+      background: #73d13d;
+      border-color: #73d13d;
+    }
+
+    &:active:not(.un-btn-disabled) {
+      background: #389e0d;
+      border-color: #389e0d;
+    }
+  }
+
+  &-warning {
+    background: #faad14;
+    border-color: #faad14;
+    color: #fff;
+
+    &:hover:not(.un-btn-disabled) {
+      background: #ffc53d;
+      border-color: #ffc53d;
+    }
+
+    &:active:not(.un-btn-disabled) {
+      background: #d48806;
+      border-color: #d48806;
+    }
+  }
+
+  &-danger {
+    background: #ff4d4f;
+    border-color: #ff4d4f;
+    color: #fff;
+
+    &:hover:not(.un-btn-disabled) {
+      background: #ff7875;
+      border-color: #ff7875;
+    }
+
+    &:active:not(.un-btn-disabled) {
+      background: #d9363e;
+      border-color: #d9363e;
+    }
+  }
+
+  &-link {
+    background: transparent;
+    border-color: transparent;
+    color: #1677ff;
+    box-shadow: none;
+
+    &:hover:not(.un-btn-disabled) {
+      color: #4096ff;
+    }
+
+    &:active:not(.un-btn-disabled) {
+      color: #0958d9;
+    }
+  }
+
+  &-circle {
+    border-radius: 50%;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+
+    &.un-btn-small {
+      width: 24px;
+      height: 24px;
+    }
+
+    &.un-btn-large {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  &-round {
+    border-radius: 32px;
+  }
+
+  &-block {
+    width: 100%;
+  }
+
+  &-ghost {
+    background: transparent;
+    border-color: #1677ff;
+    color: #1677ff;
+
+    &:hover:not(.un-btn-disabled) {
+      background: rgba(22, 119, 255, 0.06);
+    }
+
+    &:active:not(.un-btn-disabled) {
+      background: rgba(22, 119, 255, 0.1);
+    }
+  }
+
+  &-danger.un-btn-ghost {
+    background: transparent;
+    border-color: #ff4d4f;
+    color: #ff4d4f;
+
+    &:hover:not(.un-btn-disabled) {
+      background: rgba(255, 77, 79, 0.06);
+    }
+
+    &:active:not(.un-btn-disabled) {
+      background: rgba(255, 77, 79, 0.1);
+    }
+  }
+
+  &-disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    &:hover {
+      opacity: 0.6;
+    }
+  }
+
+  &-loading {
+    position: relative;
+    pointer-events: none;
+  }
+
+  &-loading-icon {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: un-btn-spin 0.6s linear infinite;
+  }
+
+  &-secondary .un-btn-loading-icon,
+  &-link .un-btn-loading-icon {
+    border-color: #1677ff;
+    border-top-color: transparent;
+  }
+
+  &-icon {
+    margin-right: 8px;
+  }
+
+  &-icon-only .un-btn-icon {
+    margin-right: 0;
+  }
+
+  &-content {
+    display: inline-block;
+  }
+
+  &-icon-only .un-btn-content {
+    display: none;
+  }
+}
+
+@keyframes un-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
