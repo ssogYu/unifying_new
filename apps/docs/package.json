@@ -18,6 +18,7 @@
   "dependencies": {
     "@unifying/core": "workspace:*",
     "@unifying/tools": "workspace:*",
+    "@unifying/ui": "workspace:*",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },
