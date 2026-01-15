@@ -12,6 +12,9 @@ node_modules
 
 **/*/dist
 
+# Webpack
+.webpack_cache
+
 # Misc
 .DS_Store
 .env
