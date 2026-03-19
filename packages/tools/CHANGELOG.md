@@ -1,5 +1,11 @@
 # @unifying/tools
 
+## 1.1.1
+
+### Patch Changes
+
+- a839618: 日常迭代
+
 ## 1.1.0
 
 ### Minor Changes
