@@ -1,5 +1,11 @@
 # @unifying/tools
 
+## 1.1.3
+
+### Patch Changes
+
+- e37d147: 优化stream
+
 ## 1.1.2
 
 ### Patch Changes
