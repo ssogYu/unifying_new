@@ -8,8 +8,6 @@ export interface StreamRequestOptions extends RequestInit {
   headers?: Record<string, string>;
   /** 请求体 */
   body?: BodyInit;
-  /** 用于取消请求的 AbortSignal */
-  signal?: AbortSignal;
   /** 每次从流中接收到消息时的回调函数 */
   onMessage?: (data: string, isError?: boolean) => void;
   /** 流开始时的回调函数 */
@@ -32,10 +30,20 @@ export interface FetchStreamOptions extends StreamRequestOptions {
   parseSSE?: boolean;
 }
 
+/**
+ * fetchStream 返回结果，包含 reader 和取消方法
+ */
+export interface FetchStreamResult {
+  /** 流读取器 */
+  reader: ReadableStreamDefaultReader<Uint8Array>;
+  /** 手动取消请求 */
+  abort: () => void;
+}
+
 export async function fetchStream(
   url: string,
   options: FetchStreamOptions = {}
-): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+): Promise<FetchStreamResult> {
   const {
     parseSSE = true,
     timeout = 60000,
@@ -44,18 +52,17 @@ export async function fetchStream(
     onMessage,
     onError,
     parseLine: customParseLine,
-    signal,
     ...fetchOptions
   } = options;
 
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  const userAbortController = signal ? null : new AbortController();
-  const activeSignal = signal ?? userAbortController!.signal;
+  const abortController = new AbortController();
+  const activeSignal = abortController.signal;
 
   const startTimeout = () => {
     if (timeout > 0) {
       timeoutId = setTimeout(() => {
-        userAbortController?.abort();
+        abortController.abort();
         onError?.(new Error(`Stream request timeout after ${timeout}ms`));
       }, timeout);
     }
@@ -92,6 +99,7 @@ export async function fetchStream(
     }
 
     if (!response.body) {
+      cleanup();
       throw new Error('Response body is null - streaming is not supported');
     }
 
@@ -140,18 +148,23 @@ export async function fetchStream(
           cleanup();
           const error = err instanceof Error ? err : new Error(String(err));
           onError?.(error);
-          throw error;
+          break;
         }
       }
     };
 
     readStream().catch((err) => {
       cleanup();
-      const error = err instanceof Error ? err : new Error(String(err));
-      onError?.(error);
+      console.error('Unexpected stream error:', err);
     });
 
-    return reader;
+    const abort = () => {
+      clearAllTimeout();
+      abortController.abort();
+      reader.cancel().catch(() => {});
+    };
+
+    return { reader, abort };
   } catch (err) {
     cleanup();
     const error = err instanceof Error ? err : new Error(String(err));
