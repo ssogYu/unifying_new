@@ -1,5 +1,11 @@
 # @unifying/core
 
+## 1.1.5
+
+### Patch Changes
+
+- a2fdffa: update
+
 ## 1.1.4
 
 ### Patch Changes
