@@ -197,10 +197,11 @@ function processLine(
   model: AIModelProvider | undefined,
   parseSSE: boolean,
   customParseLine: ((line: string) => string | null) | undefined,
-  onMessage: ((data: string, isError?: boolean) => void) | undefined
+  onMessage?: ((data: string, isError?: boolean) => void)
 ): void {
   const trimmedLine = line.trim();
   if (!trimmedLine) return;
+  console.log('原始行:', trimmedLine,model);
 
   if (customParseLine) {
     const result = customParseLine(trimmedLine);
@@ -216,149 +217,100 @@ function processLine(
     onMessage?.(trimmedLine);
   }
 }
+/**
+ * 解析不同 AI 厂商的流式数据行
+ * @param trimmedLine 当天数据流的一行数据 (已去除两端空格)
+ * @param model 模型类型
+ * @param onMessage 解析出有效文本后的回调函数
+ */
+function parseByModel(
+  trimmedLine: string, 
+  model: AIModelProvider | undefined,
+  onMessage?: ((data: string, isError?: boolean) => void)
+) {
+  // 1. 忽略空行
+  if (!trimmedLine) return;
 
-function parseSSELine(line: string, onMessage: ((data: string, isError?: boolean) => void) | undefined): void {
-  if (line.startsWith('data:')) {
-    const data = line.slice(5).trim();
+  // 2. Anthropic 等模型可能会发送 event 类型声明行，如 "event: content_block_delta"
+  // 我们主要关心包含具体内容的 data 行，所以可以跳过 event 行
+  if (trimmedLine.startsWith('event:')) {
+    return;
+  }
 
-    if (data === '[DONE]') {
-      return;
-    }
+  // 3. 处理标准的 SSE data 行
+  if (trimmedLine.startsWith('data:')) {
+    // 截取 "data: " 后面的 JSON 字符串内容
+    const dataStr = trimmedLine.slice(5).trim();
 
-    if (data.startsWith('[ERROR]')) {
-      onMessage?.(data.slice(7).trim(), true);
+    // 遇到流结束标志，停止处理
+    if (dataStr === '[DONE]') {
       return;
     }
 
     try {
-      const parsed = JSON.parse(data);
-      if (parsed.error) {
-        onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
-      } else if (parsed.choices?.[0]?.delta?.content) {
-        onMessage?.(parsed.choices[0].delta.content);
-      } else if (parsed.content) {
-        onMessage?.(parsed.content);
-      } else {
-        onMessage?.(data);
+      const json = JSON.parse(dataStr);
+      let content = '';
+
+      switch (model) {
+        // OpenAI 兼容阵营
+        case 'openai':
+        case 'azure':
+        case 'kimi':
+        case 'qwen':
+        case 'deepseek':
+        case 'grok':
+          // 典型结构: { choices: [{ delta: { content: "你好" } }] }
+          content = json.choices?.[0]?.delta?.content || '';
+          break;
+
+        // Anthropic (Claude) 阵营
+        case 'anthropic':
+          // 典型结构: { type: "content_block_delta", delta: { type: "text_delta", text: "你好" } }
+          if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
+            content = json.delta.text || '';
+          }
+          break;
+
+        // Google (Gemini) 阵营
+        case 'google':
+          // 典型结构: { candidates: [{ content: { parts: [{ text: "你好" }] } }] }
+          content = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          break;
+
+        // 自定义接入
+        case 'custom':
+          // 根据你自己后端的封装格式来解析，这里举个例子
+          content = json.msg || json.data?.content || '';
+          break;
+
+        default:
+          console.warn(`[Stream Parser] 未知模型类型: ${model}`);
       }
-    } catch {
-      onMessage?.(data);
-    }
-  }
-}
 
-function parseAnthropicLine(line: string, onMessage: ((data: string, isError?: boolean) => void) | undefined): void {
-  let data = line;
-  if (line.startsWith('data:')) {
-    data = line.slice(5).trim();
-  }
-
-  if (data === '[DONE]') {
-    return;
-  }
-
-  try {
-    const parsed = JSON.parse(data);
-    if (parsed.error) {
-      onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
-    } else if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-      onMessage?.(parsed.delta.text);
-    } else if (parsed.type === 'message_delta' && parsed.delta?.text) {
-      onMessage?.(parsed.delta.text);
-    } else if (parsed.type === 'message_stop') {
-      return;
-    } else if (parsed.content?.text) {
-      onMessage?.(parsed.content.text);
-    } else if (parsed.choices?.[0]?.delta?.content) {
-      onMessage?.(parsed.choices[0].delta.content);
-    } else {
-      onMessage?.(data);
-    }
-  } catch {
-    if (line.trim()) {
-      onMessage?.(line);
-    }
-  }
-}
-
-function parseGeminiLine(line: string, onMessage: ((data: string, isError?: boolean) => void) | undefined): void {
-  let data = line;
-  if (line.startsWith('data:')) {
-    data = line.slice(5).trim();
-  }
-
-  if (data === '[DONE]') {
-    return;
-  }
-
-  try {
-    const parsed = JSON.parse(data);
-    if (parsed.error) {
-      onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
-    } else if (parsed.candidates?.[0]?.content?.parts?.[0]?.text) {
-      onMessage?.(parsed.candidates[0].content.parts[0].text);
-    } else if (parsed.choices?.[0]?.delta?.content) {
-      onMessage?.(parsed.choices[0].delta.content);
-    } else if (parsed.text) {
-      onMessage?.(parsed.text);
-    } else {
-      onMessage?.(data);
-    }
-  } catch {
-    if (line.trim()) {
-      onMessage?.(line);
-    }
-  }
-}
-
-function parseByModel(
-  line: string,
-  model: AIModelProvider | undefined,
-  onMessage: ((data: string, isError?: boolean) => void) | undefined
-): void {
-  if (!model || model === 'custom') {
-    if (line.startsWith('data:')) {
-      parseSSELine(line, onMessage);
-    } else {
-      try {
-        const parsed = JSON.parse(line);
-        if (parsed.error) {
-          onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
-        } else {
-          onMessage?.(line);
-        }
-      } catch {
-        onMessage?.(line);
+      // 如果成功解析出文本内容，则触发回调
+      if (content) {
+        onMessage?.(content);
       }
+      
+    } catch (error) {
+      // 容错处理：当大模型返回的 JSON 不完整或格式错误时
+      console.error('[Stream Parser] JSON 解析失败:', error, '原始数据:', dataStr);
     }
-    return;
-  }
-
-  switch (model) {
-    case 'openai':
-    case 'kimi':
-    case 'qwen':
-    case 'azure':
-    case 'deepseek':
-    case 'grok':
-      if (line.startsWith('data:')) {
-        parseSSELine(line, onMessage);
-      } else {
-        onMessage?.(line);
+  } else {
+    // 处理非标准 SSE (如 Google 原生 REST 可能直接推 JSON 块)
+    // 如果 trimmedLine 是合法的 JSON 且不是以 data: 开头
+    try {
+      if (trimmedLine.startsWith('{') || trimmedLine.startsWith('[')) {
+         const json = JSON.parse(trimmedLine);
+         // 处理非标准包裹的 Google 数据
+         if (model === 'google' && json.candidates) {
+             const content = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+             if (content) onMessage?.(content);
+         }
       }
-      break;
-    case 'anthropic':
-      parseAnthropicLine(line, onMessage);
-      break;
-    case 'google':
-      parseGeminiLine(line, onMessage);
-      break;
-    default:
-      if (line.startsWith('data:')) {
-        parseSSELine(line, onMessage);
-      } else {
-        onMessage?.(line);
-      }
+    } catch (e) {
+      // 非合法 JSON，忽略
+    }
   }
 }
 
@@ -367,7 +319,7 @@ function processBuffer(
   model: AIModelProvider | undefined,
   parseSSE: boolean,
   customParseLine: ((line: string) => string | null) | undefined,
-  onMessage: ((data: string, isError?: boolean) => void) | undefined
+  onMessage?: ((data: string, isError?: boolean) => void) | undefined
 ): void {
   const lines = buffer.split('\n');
   for (const line of lines) {
