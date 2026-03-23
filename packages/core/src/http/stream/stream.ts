@@ -60,12 +60,23 @@ export async function fetchStream(
     onMessage,
     onError,
     parseLine: customParseLine,
+    signal: externalSignal,
     ...fetchOptions
   } = options;
 
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const abortController = new AbortController();
   const activeSignal = abortController.signal;
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      abortController.abort();
+    } else {
+      externalSignal.addEventListener('abort', () => {
+        abortController.abort();
+      }, { once: true });
+    }
+  }
 
   const startTimeout = () => {
     if (timeout > 0) {
