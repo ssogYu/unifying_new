@@ -54,6 +54,7 @@ export async function fetchStream(
   const {
     parseSSE = true,
     timeout = 60000,
+    model,
     onStart,
     onEnd,
     onMessage,
@@ -129,7 +130,7 @@ export async function fetchStream(
           if (done) {
             clearAllTimeout();
             if (buffer.trim()) {
-              processBuffer(buffer, parseSSE, customParseLine, onMessage);
+              processBuffer(buffer, model, parseSSE, customParseLine, onMessage);
             }
             onEnd?.();
             cleanup();
@@ -144,7 +145,7 @@ export async function fetchStream(
             buffer = lines.pop() ?? '';
 
             for (const line of lines) {
-              processLine(line, parseSSE, customParseLine, onMessage);
+              processLine(line, model, parseSSE, customParseLine, onMessage);
             }
           }
 
@@ -182,6 +183,7 @@ export async function fetchStream(
 
 function processLine(
   line: string,
+  model: AIModelProvider | undefined,
   parseSSE: boolean,
   customParseLine: ((line: string) => string | null) | undefined,
   onMessage: ((data: string, isError?: boolean) => void) | undefined
@@ -198,7 +200,7 @@ function processLine(
   }
 
   if (parseSSE) {
-    parseSSELine(trimmedLine, onMessage);
+    parseByModel(trimmedLine, model, onMessage);
   } else {
     onMessage?.(trimmedLine);
   }
@@ -234,14 +236,110 @@ function parseSSELine(line: string, onMessage: ((data: string, isError?: boolean
   }
 }
 
+function parseAnthropicLine(line: string, onMessage: ((data: string, isError?: boolean) => void) | undefined): void {
+  try {
+    const parsed = JSON.parse(line);
+    if (parsed.error) {
+      onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
+    } else if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+      onMessage?.(parsed.delta.text);
+    } else if (parsed.type === 'message_delta' && parsed.delta?.text) {
+      onMessage?.(parsed.delta.text);
+    } else if (parsed.content?.text) {
+      onMessage?.(parsed.content.text);
+    } else if (parsed.choices?.[0]?.delta?.content) {
+      onMessage?.(parsed.choices[0].delta.content);
+    } else {
+      onMessage?.(line);
+    }
+  } catch {
+    if (line.trim()) {
+      onMessage?.(line);
+    }
+  }
+}
+
+function parseGeminiLine(line: string, onMessage: ((data: string, isError?: boolean) => void) | undefined): void {
+  try {
+    const parsed = JSON.parse(line);
+    if (parsed.error) {
+      onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
+    } else if (parsed.candidates?.[0]?.content?.parts?.[0]?.text) {
+      onMessage?.(parsed.candidates[0].content.parts[0].text);
+    } else if (parsed.choices?.[0]?.delta?.content) {
+      onMessage?.(parsed.choices[0].delta.content);
+    } else if (parsed.text) {
+      onMessage?.(parsed.text);
+    } else {
+      onMessage?.(line);
+    }
+  } catch {
+    if (line.trim()) {
+      onMessage?.(line);
+    }
+  }
+}
+
+function parseByModel(
+  line: string,
+  model: AIModelProvider | undefined,
+  onMessage: ((data: string, isError?: boolean) => void) | undefined
+): void {
+  if (!model || model === 'custom') {
+    if (line.startsWith('data:')) {
+      parseSSELine(line, onMessage);
+    } else {
+      try {
+        const parsed = JSON.parse(line);
+        if (parsed.error) {
+          onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
+        } else {
+          onMessage?.(line);
+        }
+      } catch {
+        onMessage?.(line);
+      }
+    }
+    return;
+  }
+
+  switch (model) {
+    case 'openai':
+    case 'kimi':
+    case 'qwen':
+    case 'azure':
+    case 'deepseek':
+    case 'grok':
+      if (line.startsWith('data:')) {
+        parseSSELine(line, onMessage);
+      } else {
+        onMessage?.(line);
+      }
+      break;
+    case 'anthropic':
+      parseAnthropicLine(line, onMessage);
+      break;
+    case 'google':
+      parseGeminiLine(line, onMessage);
+      break;
+    default:
+      if (line.startsWith('data:')) {
+        parseSSELine(line, onMessage);
+      } else {
+        onMessage?.(line);
+      }
+  }
+}
+
 function processBuffer(
   buffer: string,
+  model: AIModelProvider | undefined,
   parseSSE: boolean,
   customParseLine: ((line: string) => string | null) | undefined,
   onMessage: ((data: string, isError?: boolean) => void) | undefined
 ): void {
   const lines = buffer.split('\n');
   for (const line of lines) {
-    processLine(line, parseSSE, customParseLine, onMessage);
+    processLine(line, model, parseSSE, customParseLine, onMessage);
   }
 }
