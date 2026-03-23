@@ -237,20 +237,31 @@ function parseSSELine(line: string, onMessage: ((data: string, isError?: boolean
 }
 
 function parseAnthropicLine(line: string, onMessage: ((data: string, isError?: boolean) => void) | undefined): void {
+  let data = line;
+  if (line.startsWith('data:')) {
+    data = line.slice(5).trim();
+  }
+
+  if (data === '[DONE]') {
+    return;
+  }
+
   try {
-    const parsed = JSON.parse(line);
+    const parsed = JSON.parse(data);
     if (parsed.error) {
       onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
     } else if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
       onMessage?.(parsed.delta.text);
     } else if (parsed.type === 'message_delta' && parsed.delta?.text) {
       onMessage?.(parsed.delta.text);
+    } else if (parsed.type === 'message_stop') {
+      return;
     } else if (parsed.content?.text) {
       onMessage?.(parsed.content.text);
     } else if (parsed.choices?.[0]?.delta?.content) {
       onMessage?.(parsed.choices[0].delta.content);
     } else {
-      onMessage?.(line);
+      onMessage?.(data);
     }
   } catch {
     if (line.trim()) {
@@ -260,8 +271,17 @@ function parseAnthropicLine(line: string, onMessage: ((data: string, isError?: b
 }
 
 function parseGeminiLine(line: string, onMessage: ((data: string, isError?: boolean) => void) | undefined): void {
+  let data = line;
+  if (line.startsWith('data:')) {
+    data = line.slice(5).trim();
+  }
+
+  if (data === '[DONE]') {
+    return;
+  }
+
   try {
-    const parsed = JSON.parse(line);
+    const parsed = JSON.parse(data);
     if (parsed.error) {
       onMessage?.(typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error), true);
     } else if (parsed.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -271,7 +291,7 @@ function parseGeminiLine(line: string, onMessage: ((data: string, isError?: bool
     } else if (parsed.text) {
       onMessage?.(parsed.text);
     } else {
-      onMessage?.(line);
+      onMessage?.(data);
     }
   } catch {
     if (line.trim()) {
