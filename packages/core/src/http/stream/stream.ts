@@ -319,7 +319,7 @@ function processBuffer(
   model: AIModelProvider | undefined,
   parseSSE: boolean,
   customParseLine: ((line: string) => string | null) | undefined,
-  onMessage?: ((data: string, isError?: boolean) => void) | undefined
+  onMessage?: ((data: string, isError?: boolean) => void)
 ): void {
   const lines = buffer.split('\n');
   for (const line of lines) {
