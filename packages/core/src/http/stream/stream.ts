@@ -1,9 +1,16 @@
 /**
+ * 流行的 AI 模型厂商
+ */
+export type AIModelProvider = 'openai' | 'anthropic' | 'google' | 'azure' | 'kimi' | 'qwen' | 'deepseek' | 'grok' | 'custom';
+
+/**
  * 流式请求配置选项
  */
 export interface StreamRequestOptions extends RequestInit {
   /** HTTP 请求方法（默认：POST） */
   method?: 'POST' | 'GET' | 'PUT' | 'DELETE' | 'PATCH';
+  /** 模型厂商名称 */
+  model?: AIModelProvider;
   /** HTTP 请求头 */
   headers?: Record<string, string>;
   /** 请求体 */
