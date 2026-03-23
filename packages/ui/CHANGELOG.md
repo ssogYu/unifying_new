@@ -1,5 +1,11 @@
 # @unifying/ui
 
+## 1.1.4
+
+### Patch Changes
+
+- a24b893: update
+
 ## 1.1.3
 
 ### Patch Changes
