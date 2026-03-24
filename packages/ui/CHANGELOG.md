@@ -1,5 +1,11 @@
 # @unifying/ui
 
+## 1.1.6
+
+### Patch Changes
+
+- e18bcd6: update
+
 ## 1.1.5
 
 ### Patch Changes
