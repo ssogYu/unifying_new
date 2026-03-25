@@ -1,5 +1,11 @@
 # @unifying/core
 
+## 1.1.8
+
+### Patch Changes
+
+- c571390: update
+
 ## 1.1.7
 
 ### Patch Changes
