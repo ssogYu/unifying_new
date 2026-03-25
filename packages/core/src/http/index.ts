@@ -1,1 +1,1 @@
-export { fetchStream, type StreamRequestOptions, type FetchStreamOptions } from './stream/stream';
+export * from './stream/stream';
