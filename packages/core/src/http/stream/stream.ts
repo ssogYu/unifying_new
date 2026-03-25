@@ -283,8 +283,8 @@ function parseByModel(
           if (!delta) break;
 
           // 1. 优先提取思考过程 (DeepSeek R1 / 阿里云百炼 Qwen 等标准结构)
-          if ('reasoning_content' in delta && typeof delta.reasoning_content === 'string') {
-            onMessage?.({ type: 'thinking', text: delta.reasoning_content });
+          if ('reasoning' in delta && typeof delta.reasoning === 'string') {
+            onMessage?.({ type: 'thinking', text: delta.reasoning });
           }
 
           if ('content' in delta && typeof delta.content === 'string') {
