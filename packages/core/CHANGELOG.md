@@ -1,5 +1,11 @@
 # @unifying/core
 
+## 1.1.7
+
+### Patch Changes
+
+- b577a25: stream导出变量
+
 ## 1.1.6
 
 ### Patch Changes
