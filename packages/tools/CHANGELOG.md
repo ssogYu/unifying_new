@@ -1,5 +1,11 @@
 # @unifying/tools
 
+## 1.1.10
+
+### Patch Changes
+
+- 8251b29: 移除axios模块
+
 ## 1.1.9
 
 ### Patch Changes
