@@ -1,5 +1,11 @@
 # @unifying/tools
 
+## 1.1.9
+
+### Patch Changes
+
+- b3db19e: 基于axios封装请求库
+
 ## 1.1.8
 
 ### Patch Changes
