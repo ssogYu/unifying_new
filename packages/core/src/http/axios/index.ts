@@ -6,7 +6,7 @@ export function createHttpRequest(config: RequestConfig = {}) {
     baseURL: process?.env?.APP_BASE_API || '', 
     timeout: 30000,
     headers: {
-      'Content-Type': 'application/json;charset=utf-8',
+      'Content-Type': 'application/json',
     },
     cancelRepeatRequest: true,
     ...config,
