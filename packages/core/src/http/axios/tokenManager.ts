@@ -7,6 +7,7 @@ export class TokenManager {
     try {
       this.token = localStorage.getItem(this.localStorageKey) ?? null;
     } catch {
+      console.warn(`[TokenManager] localStorage unavailable (e.g., SSR, private mode), token only stored in memory`);
       this.token = null;
     }
   }

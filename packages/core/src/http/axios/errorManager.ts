@@ -58,10 +58,8 @@ export class ErrorManager {
   public handleBusinessError(code: number | string, message: string): AppError {
     const msg = message || '业务处理失败';
     const appError: AppError = { type: ErrorType.BUSINESS, code, message: msg };
-    // 你可以根据特定的业务 code 做特殊处理
-    if (code === '401') {
-      this.showToast('Token 无效，请重新登录');
-      // 执行登出...
+    if (code == 401 || code === '401') {
+      this.showToast('登录已过期，请重新登录');
     } else {
       this.showToast(msg);
     }
@@ -75,7 +73,7 @@ export class ErrorManager {
     if (axios.isCancel(error)) {
       // 1. 请求被主动取消
       appError = { type: ErrorType.CANCEL, message: '请求已被主动取消', originalError: error };
-    } else if (error.isAxiosError) {
+    } else if (error.request || error.response || error.isAxiosError) {
       // 2. Axios 捕获的 HTTP/网络错误
       if (error.response) {
         // 请求发出了，并且服务器回复了状态码 (不在 2xx 范围内)

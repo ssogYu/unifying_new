@@ -9,7 +9,11 @@ export class AbortControllerManager {
     if (config.requestKey) {
       return config.requestKey;
     }
-    return `${config.method?.toUpperCase() || ''}:${config.url}`;
+    const method = config.method?.toUpperCase() || '';
+    const url = config.url || '';
+    const params = config.params ? JSON.stringify(config.params) : '';
+    const data = config.data ? JSON.stringify(config.data) : '';
+    return `${method}:${url}:${params}:${data}`;
   }
 
   // 将请求加入到等待队列，并处理重复请求
@@ -26,9 +30,9 @@ export class AbortControllerManager {
 
   // 根据标识移除并取消请求
   public remove(key: string, reason = '请求被手动取消') {
-    if (this.pendingRequests.has(key)) {
-      const controller = this.pendingRequests.get(key);
-      controller?.abort(reason);
+    const controller = this.pendingRequests.get(key);
+    if (controller) {
+      controller.abort(reason);
       this.pendingRequests.delete(key);
     }
   }

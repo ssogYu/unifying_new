@@ -72,12 +72,8 @@ export class httpRequest {
   }
 
   private doRequest = async <T>(config: RequestConfig): Promise<BaseResponse<T>> => {
-    try {
-      const axiosResp: AxiosResponse<T> = await this.instance.request<T>(config);
-      return axiosResp.data as BaseResponse<T>;
-    } catch (error) {
-      return Promise.reject(error);
-    }
+    const axiosResp: AxiosResponse<BaseResponse<T>> = await this.instance.request<BaseResponse<T>>(config);
+    return axiosResp.data;
   };
 
   public addRequestInterceptor(
